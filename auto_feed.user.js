@@ -3248,17 +3248,17 @@ function set_jump_href(raw_info, mode) {
                 } else if (key == 'ZHUQUE') {
                     forward_url = used_site_info[key].url + 'torrent/upload';
                 } else if (key == 'KIMOJI') {
-                    var type_dict = {'电影': 1, '剧集': 2, '动漫': 3, '综艺': 5, '纪录': 6, '音乐': 7, '体育': 8 };
+                    var type_dict = {'电影': 1, '剧集': 2, '音乐': 3, '有声': 4 };
                     if (type_dict.hasOwnProperty(raw_info.type)) {
                         forward_url = used_site_info[key].url + `torrents/create?category_id=${type_dict[raw_info.type]}`;
                     } else {
                         forward_url = used_site_info[key].url + 'torrents/create?category_id=1';
                     }
                     if (raw_info.type == '动漫' && raw_info.name.match(/S\d+|E\d+/)) {
-                        forward_url = used_site_info[key].url + 'torrents/create?category_id=4';
+                        forward_url = used_site_info[key].url + 'torrents/create?category_id=2';
                     }
                     if (raw_info.type == '电影' && raw_info.descr.match(/◎类.*?别.*?动画/)) {
-                        forward_url = used_site_info[key].url + 'torrents/create?category_id=3';
+                        forward_url = used_site_info[key].url + 'torrents/create?category_id=1';
                     }
                 } else {
                     forward_url = used_site_info[key].url + 'upload.php';
@@ -9252,7 +9252,7 @@ function auto_feed() {
             getJson(`https://sugoimusic.me/ajax.php?action=torrent&id=${torrent_id}`, null, function(data){
                 raw_info.json =  JSON.stringify(data);
                 console.log(data)
-                raw_info.descr = raw_info.descr.replace(cover, data.response.group.wikiImage);
+                raw_info.descr = raw_info.descr.replace(cover, data.response.group.wiiimage);
                 jump_str = dictToString(raw_info);
                 tag_aa = forward_r.getElementsByClassName('forward_a');
                 for (i = 0; i < tag_aa.length; i++) {
@@ -20956,7 +20956,7 @@ function auto_feed() {
                     setTimeout(function(){
                         $('#autoimdb').val(tid);
                     }, 500);
-                } else if (this.value == '2' || this.value == '4' || $('#autocat').val() == '5' || $('#autocat').val() == '6' || $('#autocat').val() == '8') {
+                } else if (this.value == '2') {
                     var tid = $('#autoimdb').val();
                     setTimeout(function(){
                         $('#autoimdb').val(tid);
@@ -20965,43 +20965,49 @@ function auto_feed() {
                     }, 500);
                 }
             });
-            if ($('#autocat').val() == '2' || $('#autocat').val() == '4' || $('#autocat').val() == '5' || $('#autocat').val() == '6' || $('#autocat').val() == '8') {
+            if ($('#autocat').val() == '2') {
                 try { $('#season_number').val(parseInt(raw_info.name.match(/S(\d+)/i)[1])) } catch (err) {$('#season_number').val("1")}
                 try { $('#episode_number').val(parseInt(raw_info.name.match(/E(\d+)/i)[1])) } catch (err) {
                     $('#episode_number').val(0);
                 }
+                //tvdb_id统一为0，由站点后端异步获取
+                $('#autotvdb').val(0);
             }
-            var jump_mal = '';
-            if (raw_info.type != '动漫' && !raw_info.descr.match(/◎类.*?别.*?动画/)) {
-                $('#automal').val(0);
-            } else {
-                var search_name = get_search_name(raw_info.name);
-                var url = `https://myanimelist.net/search/all?q=${search_name}&cat=all`;
-                console.log(url);
-                jump_mal = `<br>如果没有准确的MAL ID，请点击<a href=${encodeURI(url)} target="_blank">跳转</a>按钮前往官网查询。`;
-                var $div = $(`<div style="margin-top: 10px;"></div>`);
-                var $table = $(`<table id="mal" class="table table-condensed table-bordered table-striped table-hover"></table>`);
-                $div.append($table);
-                getDoc(url, null, function(doc) {
-                    var articles = $('#anime', doc).next();
-                    articles.find('div[class="list di-t w100"]:lt(5)').map((index,e)=>{
-                        var $tr=$("<tr></tr>");
-                        $td0 = $(`<td><img src="${$(e).find('img:first').attr('data-src')}"  style="width:80px; height: 120px";></td>`);
-                        $td1 = $(`<td>${$(e).find('div.title').find('a').text()}</td>`);
-                        $td2 = $(`<td>${$(e).find('div[class="pt8 fs10 lh14 fn-grey4"]').text()}</td>`);
-                        $td3 = $(`<td><a href="${$(e).find('div.title').find('a').attr('href')}" target="_blank">MAL ID: ${$(e).find('div.title').find('a').attr('href').match(/anime\/(\d+)/)[1]}</a></td>`);
-                        $td4 = $(`<td><input type="button" class="fill_mal" name=${$(e).find('div.title').find('a').attr('href').match(/anime\/(\d+)/)[1]} title="${$(e).find('div.title').find('a').text()}" value="USE-M"></td>`);
-                        $tr.append($td0); $tr.append($td1); $tr.append($td2); $tr.append($td3); $tr.append($td4);
-                        $table.append($tr);
+            //mal_id统一为0，由站点后端异步获取
+            $('#automal').val(0);
+
+
+
+            /*    if (raw_info.type != '动漫' && !raw_info.descr.match(/◎类.*?别.*?动画/)) {
+                    $('#automal').val(0);
+                } else {
+                    var search_name = get_search_name(raw_info.name);
+                    var url = `https://myanimelist.net/search/all?q=${search_name}&cat=all`;
+                    console.log(url);
+                    jump_mal = `<br>如果没有准确的MAL ID，请点击<a href=${encodeURI(url)} target="_blank">跳转</a>按钮前往官网查询。`;
+                    var $div = $(`<div style="margin-top: 10px;"></div>`);
+                    var $table = $(`<table id="mal" class="table table-condensed table-bordered table-striped table-hover"></table>`);
+                    $div.append($table);
+                    getDoc(url, null, function(doc) {
+                        var articles = $('#anime', doc).next();
+                        articles.find('div[class="list di-t w100"]:lt(5)').map((index,e)=>{
+                            var $tr=$("<tr></tr>");
+                            $td0 = $(`<td><img src="${$(e).find('img:first').attr('data-src')}"  style="width:80px; height: 120px";></td>`);
+                            $td1 = $(`<td>${$(e).find('div.title').find('a').text()}</td>`);
+                            $td2 = $(`<td>${$(e).find('div[class="pt8 fs10 lh14 fn-grey4"]').text()}</td>`);
+                            $td3 = $(`<td><a href="${$(e).find('div.title').find('a').attr('href')}" target="_blank">MAL ID: ${$(e).find('div.title').find('a').attr('href').match(/anime\/(\d+)/)[1]}</a></td>`);
+                            $td4 = $(`<td><input type="button" class="fill_mal" name=${$(e).find('div.title').find('a').attr('href').match(/anime\/(\d+)/)[1]} title="${$(e).find('div.title').find('a').text()}" value="USE-M"></td>`);
+                            $tr.append($td0); $tr.append($td1); $tr.append($td2); $tr.append($td3); $tr.append($td4);
+                            $table.append($tr);
+                        });
+                        $('.fill_mal').css({'backgroundColor': '#424242'});
+                        $table.find('td').css({'backgroundColor': '#088A4B'});
+                        $('.fill_mal').click(function(){
+                            $('#automal').val($(this).attr('name'));
+                        });
                     });
-                    $('.fill_mal').css({'backgroundColor': '#424242'});
-                    $table.find('td').css({'backgroundColor': '#088A4B'});
-                    $('.fill_mal').click(function(){
-                        $('#automal').val($(this).attr('name'));
-                    });
-                });
-                $('#apimatch').parent().parent().after($div);
-            }
+                    $('#apimatch').parent().parent().after($div);
+                }*/
             if (raw_info.url && used_tmdb_key) {
                 var imdb_id = raw_info.url.match(/tt\d+/)[0];
                 var search_url = `https://api.themoviedb.org/3/find/${imdb_id}?api_key=${used_tmdb_key}&external_source=imdb_id&include_adult=false&language=zh-CN`;
@@ -21082,7 +21088,9 @@ function auto_feed() {
                     }
                 });
                 $('#apimatch').parent().parent().after($div);
-                $('#apimatch').parent().parent().after(`<output name="apimatch" for="torrent" style="color: white;">资源名称：${raw_info.name}<br>由于当前资源没有IMDB，请手动选择适配资源点选USE-T按钮获取TMDB ID。<br>如果转载的资源为动漫资源，同理点选USE-M按钮获取MAL ID。${jump_mal}</output>`);
+                $('#apimatch').parent().parent().after(`<output name="apimatch" for="torrent" style="color: white;">资源名称：${raw_info.name}<br>由于当前资源没有IMDB，请手动选择适配资源点选USE-T按钮获取TMDB ID</output>`);
+                //无imdb时使用0
+                $('#autoimdb').val(0);
             }
             try{ $('#autoimdb').val(raw_info.url.match(/tt(\d+)/i)[1]); } catch(err) {}
             if (raw_info.descr.match(/◎类.*?别.*?儿童/)) {
